@@ -8,6 +8,10 @@ rq
 redis
 httpx
 structlog
+fastapi
+uvicorn
+jinja2
+psutil
 
 # Original dependencies (retained for compatibility)
 telegraph

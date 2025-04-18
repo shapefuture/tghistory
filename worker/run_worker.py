@@ -2,11 +2,13 @@ import logging
 import sys
 import signal
 import time
+import os
 
 from app.logging_config import setup_logging
 from app import config
 from app.shared.redis_client import get_redis_connection, get_rq_queue
 from app.worker import tasks
+from app.shared.metrics import MetricsCollector
 
 from rq import Worker
 
@@ -24,6 +26,25 @@ def handle_shutdown_signal(signum, frame):
     time.sleep(1)
     sys.exit(0)
 
+def collect_system_metrics_periodically():
+    """Periodically collect system metrics in a background thread"""
+    import threading
+    
+    def _collect_metrics():
+        while True:
+            try:
+                MetricsCollector.record_system_metrics()
+            except Exception as e:
+                logger.error(f"Failed to collect system metrics: {e}")
+            
+            # Sleep for 60 seconds
+            time.sleep(60)
+    
+    # Start metrics collection in a daemon thread
+    metrics_thread = threading.Thread(target=_collect_metrics, daemon=True)
+    metrics_thread.start()
+    logger.info("Started system metrics collection thread")
+
 def main():
     try:
         # Register signal handlers for graceful shutdown
@@ -38,10 +59,15 @@ def main():
         logger.info(f"Starting worker for queue: {queue.name}")
         logger.info(f"Redis connection: {redis_conn}")
         
+        # Start system metrics collection
+        collect_system_metrics_periodically()
+        
+        # Create worker with retry and failure handling
         worker = Worker(
             [queue],
             connection=redis_conn,
-            exception_handlers=[]
+            exception_handlers=[],
+            default_result_ttl=60*60*24  # 24 hours
         )
         
         # Set worker name for better identification in logs

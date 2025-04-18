@@ -10,6 +10,9 @@ This project implements a Telegram userbot that can extract chat history, proces
 2. **RQ Worker (Backend)**: Processes extraction jobs, calls LLM APIs, and notifies frontend via Redis Pub/Sub.
 3. **Redis**: Used for state management, job queuing, and real-time notifications.
 4. **API/Web UI**: Optional FastAPI-based status viewing and file download functionality.
+5. **Monitoring & Metrics**: Health check system and metrics collection for observability.
+6. **Rate Limiting**: Throttling mechanism to prevent abuse.
+7. **Backup & Retention**: Automated backup and data retention policies.
 
 ### Flow:
 1. User specifies chat (forward or link)
@@ -93,6 +96,11 @@ All functions handle Redis exceptions gracefully, preventing app crashes.
   - Sets up logging
   - Authenticates Telethon
   - Starts event loop
+- **`scheduled_tasks(interval_minutes)`**: Runs periodic maintenance
+  - Backup session files
+  - Backup Redis data
+  - Apply retention policies
+  - Cleanup old files
 
 ## 5. Worker Components
 
@@ -103,6 +111,8 @@ All functions handle Redis exceptions gracefully, preventing app crashes.
   - Calls LLM
   - Saves results
   - Publishes status updates
+  - Collects performance metrics
+  - Includes automatic retries for transient errors
 
 ### `app/worker/llm_service.py`
 - **`estimate_token_count(text)`**: Estimates token count for LLM context management
@@ -121,6 +131,9 @@ All functions handle Redis exceptions gracefully, preventing app crashes.
 - **`main()`**: Entry point for worker
   - Sets up RQ worker
   - Connects to Redis
+- **`collect_system_metrics_periodically()`**: Collects system metrics
+  - Runs in background thread
+  - Stores in Redis
 
 ## 6. API/Web Components
 
@@ -136,7 +149,63 @@ All functions handle Redis exceptions gracefully, preventing app crashes.
 - **`status_page(request_id, user)`**: Web page for status monitoring
 - **`download_file(task_id, filename, user)`**: Secure file downloads
 
-## 7. Testing Framework
+### `app/routers/monitoring.py`
+- **`health_check(full)`**: Basic health check endpoint
+- **`component_health()`**: Detailed component health status
+- **`system_metrics(days, interval_minutes)`**: System performance metrics
+- **`api_metrics(days, endpoints)`**: API usage metrics
+- **`user_metrics(user_id, days)`**: User activity metrics
+- **`job_metrics(job_id)`**: Individual job performance metrics
+
+### `app/main.py`
+- **FastAPI application**: Main entry point for web server
+  - CORS middleware
+  - Request timing middleware for metrics
+  - Static files and Jinja2 templates
+  - API routes
+
+## 7. System Monitoring & Health
+
+### `app/shared/health.py`
+- **`check_redis_health()`**: Verifies Redis connection and status
+- **`check_telegram_health(test_connection)`**: Verifies Telegram API access
+- **`check_system_health()`**: Monitors CPU, memory, and disk usage
+- **`check_network_health()`**: Tests external service connectivity
+- **`get_overall_health(include_telegram)`**: Aggregates all health checks
+
+## 8. Metrics Collection
+
+### `app/shared/metrics.py`
+- **`MetricsCollector.record_job_metrics(job_id, metrics)`**: Stores job performance data
+- **`MetricsCollector.record_user_metrics(user_id, action, metadata)`**: Tracks user activity
+- **`MetricsCollector.record_system_metrics()`**: Captures system resource usage
+- **`MetricsCollector.record_api_metrics(endpoint, response_time, status_code)`**: Tracks API usage
+- **`MetricsRetriever`**: Class with methods to retrieve and format metrics
+
+## 9. Rate Limiting
+
+### `app/shared/rate_limiter.py`
+- **`RateLimiter.check_rate_limit(user_id, action, limit, period, increment)`**: Per-user limits
+- **`RateLimiter.check_global_rate_limit(action, limit, period, increment)`**: System-wide limits
+- **`RateLimiter.get_rate_limits(user_id)`**: Retrieves current rate limit status
+
+## 10. Error Recovery & Retries
+
+### `app/shared/retry.py`
+- **`retry(max_tries, delay, backoff, exceptions, jitter, on_retry)`**: Decorator for retrying functions
+- **`async_retry(max_tries, delay, backoff, exceptions, jitter, on_retry)`**: Async version
+- **`is_retryable_exception(exception)`**: Determines if exception is transient/retryable
+
+## 11. Backup & Data Retention
+
+### `app/shared/backup.py`
+- **`BackupManager.backup_session_files(backup_dir)`**: Saves Telegram session
+- **`BackupManager.backup_redis_data(backup_dir, key_patterns)`**: Exports Redis state
+- **`BackupManager.restore_redis_backup(backup_path, overwrite)`**: Restores from backup
+- **`BackupManager.apply_retention_policy(backup_dir, days_to_keep, min_backups_to_keep)`**: Manages backups
+- **`BackupManager.cleanup_old_files(output_dir, days_to_keep, file_patterns)`**: Removes old files
+
+## 12. Testing Framework
 
 Comprehensive test suite covering:
 - Configuration validation
@@ -146,7 +215,7 @@ Comprehensive test suite covering:
 - Worker task execution
 - Results delivery
 
-## 8. Deployment
+## 13. Deployment
 
 ### `render.yaml`
 - Defines infrastructure for Render.com:
@@ -163,3 +232,4 @@ Comprehensive test suite covering:
 3. View progress updates in Telegram
 4. Receive summary and participant lists directly in Telegram
 5. (Optional) View detailed status and download files via web UI
+6. (Optional) Monitor system health and metrics via monitoring API
