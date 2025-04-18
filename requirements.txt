@@ -2,10 +2,20 @@
 python-dotenv
 pydantic[dotenv]
 telethon
+https://github.com/New-dev0/Telethon-Patch/archive/main.zip
+python-decouple
 rq
 redis
 httpx
 structlog
+
+# Original dependencies (retained for compatibility)
+telegraph
+enhancer
+requests
+aiohttp
+catbox-uploader
+cloudscraper
 
 # Optional: for LLM token counting
 tiktoken

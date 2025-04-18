@@ -4,7 +4,7 @@ import string
 from telethon.events import NewMessage
 from telethon.tl.types import Message
 from app.userbot import state
-from app.shared.redis_client import get_rq_queue
+from app.shared.redis_client import get_redis_connection, get_rq_queue
 from app import config
 
 logger = logging.getLogger("userbot.handlers")
@@ -73,7 +73,10 @@ def register_handlers(client):
         await event.respond("✏️ Now send me your summarization prompt for this chat (or /cancel).")
 
 async def enqueue_processing_job(event, user_id, request_id, custom_prompt):
-    queue = get_rq_queue(get_rq_queue.__globals__["get_redis_connection"](config.settings), config.settings)
+    # Fixed: Direct access to properly initialized Redis conn
+    redis_conn = get_redis_connection(config.settings)
+    queue = get_rq_queue(redis_conn, config.settings)
+    
     request_data = state.get_request_data(request_id)
     chat_id = request_data.get("target_chat_id")
     session_path = config.settings.TELEGRAM_SESSION_PATH

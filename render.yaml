@@ -36,7 +36,7 @@ services:
     disk:
       name: userbot-data
       mountPath: /data
-      sizeGB: 1
+      sizeGB: 5  # Increased from 1GB to 5GB for typical Telegram usage
 
   - type: worker
     name: rq-worker
@@ -69,4 +69,4 @@ services:
     disk:
       name: userbot-data
       mountPath: /data
-      sizeGB: 1
+      sizeGB: 5  # Increased from 1GB to 5GB for typical Telegram usage

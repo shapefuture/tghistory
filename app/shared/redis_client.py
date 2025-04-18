@@ -1,6 +1,6 @@
 import redis
 from rq import Queue
-from . import config
+from app import config  # Fixed: Using absolute import instead of relative
 
 _redis_instance = None
 

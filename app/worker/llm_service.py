@@ -7,7 +7,7 @@ from app import config
 logger = logging.getLogger("worker.llm_service")
 
 def estimate_token_count(text: str) -> int:
-    # Simple heuristic; you can use tiktoken if wanted
+    # Simple heuristic; you can use tiktoken if added
     # GPT-3 token/word is ~0.75, so 4/3 * words
     return int(1.33 * len(text.split()))
 
@@ -23,6 +23,11 @@ def truncate_history(history_text: str, max_tokens: int) -> str:
     return " ".join(head) + " ... [TRUNCATED] ... " + " ".join(tail)
 
 async def get_llm_summary(prompt: str, history_text: str, settings: config.Settings) -> Optional[str]:
+    # If LLM is not configured, return a fallback message
+    if not settings.LLM_API_KEY or not settings.LLM_ENDPOINT_URL:
+        logger.warning("LLM not configured. Using fallback message.")
+        return f"[LLM NOT CONFIGURED] - Extraction completed, but summarization is not available.\n\nPrompt: {prompt}\n\nConfigure LLM_API_KEY and LLM_ENDPOINT_URL to enable summarization."
+    
     max_tokens = settings.MAX_LLM_HISTORY_TOKENS
     truncated_history = truncate_history(history_text, max_tokens)
 
@@ -41,15 +46,16 @@ async def get_llm_summary(prompt: str, history_text: str, settings: config.Setti
             resp = await client.post(settings.LLM_ENDPOINT_URL, json=body, headers=headers)
             if resp.status_code != 200:
                 logger.error(f"LLM API HTTP error {resp.status_code}: {resp.text}")
-                return None
+                return f"[LLM API Error] {resp.status_code}: Unable to generate summary."
             data = resp.json()
             summary = data.get("summary") or data.get("result")
             if not summary:
                 logger.error(f"Missing summary/result in LLM response: {data}")
+                return f"[LLM Response Error] Missing summary in response."
             return summary
     except httpx.RequestError as e:
         logger.error(f"HTTPX request error: {e}")
-        return None
+        return f"[LLM Network Error] {type(e).__name__}: {str(e)}"
     except Exception as e:
         logger.exception(f"LLM summarization exception: {e}")
-        return None
+        return f"[LLM Processing Error] {type(e).__name__}: {str(e)}"
