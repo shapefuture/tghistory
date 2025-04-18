@@ -1,11 +1,20 @@
-# Important Requirements here.
-telethon
-https://github.com/New-dev0/Telethon-Patch/archive/main.zip
-python-decouple
+# Core Requirements
 python-dotenv
-telegraph
-enhancer
-requests
-aiohttp
-catbox-uploader
-cloudscraper
+pydantic[dotenv]
+telethon
+rq
+redis
+httpx
+structlog
+
+# Optional: for LLM token counting
+tiktoken
+
+# Testing/Linting/Formatting
+pytest
+pytest-asyncio
+pytest-mock
+fakeredis[lua]
+black
+flake8
+mypy

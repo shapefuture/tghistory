@@ -1,0 +1,72 @@
+# --- Render.com Infrastructure as Code ---
+
+services:
+  - type: redis
+    name: my-telegram-extractor-redis
+    ipAllowList: [] # restrict network for prod
+
+  - type: worker
+    name: telegram-userbot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run_userbot.py
+    envVars:
+      - key: TELEGRAM_API_ID
+        sync: false
+      - key: TELEGRAM_API_HASH
+        sync: false
+      - key: TELEGRAM_SESSION_PATH
+        value: /data/session.session
+      - key: REDIS_URL
+        value: ${{ my-telegram-extractor-redis.internalRedisUrl }}
+      - key: OUTPUT_DIR_PATH
+        value: /data/output
+      - key: LOG_LEVEL
+        value: INFO
+      - key: RQ_QUEUE_NAME
+        value: default
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_ENDPOINT_URL
+        sync: false
+      - key: LLM_MODEL_NAME
+        sync: false
+      - key: MAX_LLM_HISTORY_TOKENS
+        value: "3000"
+    disk:
+      name: userbot-data
+      mountPath: /data
+      sizeGB: 1
+
+  - type: worker
+    name: rq-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python worker/run_worker.py
+    envVars:
+      - key: TELEGRAM_API_ID
+        sync: false
+      - key: TELEGRAM_API_HASH
+        sync: false
+      - key: TELEGRAM_SESSION_PATH
+        value: /data/session.session
+      - key: REDIS_URL
+        value: ${{ my-telegram-extractor-redis.internalRedisUrl }}
+      - key: OUTPUT_DIR_PATH
+        value: /data/output
+      - key: LOG_LEVEL
+        value: INFO
+      - key: RQ_QUEUE_NAME
+        value: default
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_ENDPOINT_URL
+        sync: false
+      - key: LLM_MODEL_NAME
+        sync: false
+      - key: MAX_LLM_HISTORY_TOKENS
+        value: "3000"
+    disk:
+      name: userbot-data
+      mountPath: /data
+      sizeGB: 1
