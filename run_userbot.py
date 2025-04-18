@@ -5,6 +5,8 @@ import sys
 from app.logging_config import setup_logging
 from app import config
 from app.userbot.client import get_telethon_client
+from app.userbot.handlers import register_handlers
+from app.userbot.event_listener import listen_for_job_events
 
 def main():
     setup_logging(config.settings)
@@ -23,6 +25,12 @@ def main():
                 "Please run interactively once via Render Shell or locally to authenticate."
             )
             sys.exit(1)
+
+        # Register message handlers
+        register_handlers(client)
+        
+        # Start Pub/Sub listener for job status updates
+        asyncio.create_task(listen_for_job_events(client))
 
         logging.info(f"✅ [Userbot] Connected and authorized. Ready for action.")
         await client.run_until_disconnected()
