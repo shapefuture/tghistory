@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Request Status</title>
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+</head>
+<body>
+    <div id="status" hx-get="/api/status/{{ request_id }}" hx-trigger="every 5s" hx-target="#status" hx-swap="outerHTML">
+        {% for task in request.tasks %}
+            <div>
+                <span>Chat: {{ task.chat_id }}</span>
+                <span>Status: {{ task.status }}</span>
+                {% if task.participants_file %}
+                    <a href="/download/{{ request.request_id }}/{{ task.participants_file|basename }}">Download Participants</a>
+                {% endif %}
+                {% if task.summary %}
+                    <pre>{{ task.summary }}</pre>
+                {% endif %}
+                {% if task.error %}
+                    <span style="color:red;">{{ task.error }}</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
