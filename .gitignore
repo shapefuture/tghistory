@@ -1,47 +1,92 @@
-.env
-*.session-journal
-*.session
-build
-test*
-*.mp3
-*.webm
-*.webp
-*.mp4
-*.tgs
-*.txt
-/*.jpg
-/*.png
-/*.mp4
-*.log
-target/npmlist.json
-package-lock.json
-ultroid.json
-resources/extras/thumbnail.jpg
-resources/auth/
-
-# Directories
-addons/
-vcbot/
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Environments
+.env
+.venv
+env/
 venv/
-node_modules/
-glitch_me/
-src/glitch-me
-.idea/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# dotenv
+.env.*
+!.env.sample
+*.env
+
+# VS Code
 .vscode/
-temp/
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
-.settings/
-*.swf
-*.air
-*.ipa
-*.apk
 
-# temporary files
-*.raw
+# FastAPI templates
+app/__pycache__/
+app/templates/__pycache__/
+app/templates/main/__pycache__/
 
-# fly.io configs
-fly.toml
+# Render deploy
+render.yaml

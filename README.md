@@ -1,127 +1,64 @@
-<p align="center">
-  <img src="./resources/extras/logo_readme.jpg" alt="TeamUltroid Logo">
-</p>
-<h1 align="center">
-  <b>Ultroid - UserBot</b>
-</h1>
+# Telegram Extraction Userbot
 
-<b>A stable pluggable Telegram userbot + Voice & Video Call music bot, based on Telethon.</b>
+A userbot solution to extract, analyze, and summarize Telegram chats using LLM technology.
 
-[![](https://img.shields.io/badge/Ultroid-v0.8-crimson)](#)
-[![Stars](https://img.shields.io/github/stars/TeamUltroid/Ultroid?style=flat-square&color=yellow)](https://github.com/TeamUltroid/Ultroid/stargazers)
-[![Forks](https://img.shields.io/github/forks/TeamUltroid/Ultroid?style=flat-square&color=orange)](https://github.com/TeamUltroid/Ultroid/fork)
-[![Size](https://img.shields.io/github/repo-size/TeamUltroid/Ultroid?style=flat-square&color=green)](https://github.com/TeamUltroid/Ultroid/)   
-[![Python](https://img.shields.io/badge/Python-v3.10.3-blue)](https://www.python.org/)
-[![CodeFactor](https://www.codefactor.io/repository/github/teamultroid/ultroid/badge/main)](https://www.codefactor.io/repository/github/teamultroid/ultroid/overview/main)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/TeamUltroid/Ultroid/graphs/commit-activity)
-[![Docker Pulls](https://img.shields.io/docker/pulls/theteamultroid/ultroid?style=flat-square)](https://img.shields.io/docker/pulls/theteamultroid/ultroid?style=flat-square)   
-[![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/TeamUltroid/Ultroid)
-[![Contributors](https://img.shields.io/github/contributors/TeamUltroid/Ultroid?style=flat-square&color=green)](https://github.com/TeamUltroid/Ultroid/graphs/contributors)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
-[![License](https://img.shields.io/badge/License-AGPL-blue)](https://github.com/TeamUltroid/Ultroid/blob/main/LICENSE)   
-[![Sparkline](https://stars.medv.io/Teamultroid/Ultroid.svg)](https://stars.medv.io/TeamUltroid/Ultroid)
-----
+## Features
 
-# Deploy
-- [Heroku](#deploy-to-heroku)
-- [Okteto](#deploy-to-okteto)
-- [Local Machine](#deploy-locally)
+- Extract message history from Telegram chats, groups, and channels
+- Extract participant information from groups
+- Summarize content using LLM APIs
+- Real-time status updates during processing
+- Redis state management for robustness
+- Background job processing with RQ
 
-# Documentation 
-[![Documentation](https://img.shields.io/badge/Documentation-Ultroid-blue)](http://ultroid.tech/)
+## Environment Setup
 
-# Tutorial 
-- Full Tutorial - [![Full Tutorial](https://img.shields.io/badge/Watch%20Now-blue)](https://www.youtube.com/watch?v=0wAV7pUzhDQ)
+This project supports both new and legacy environment variable naming:
 
-- Tutorial to get Redis URL and password - [here.](./resources/extras/redistut.md)
----
+| New Name | Legacy Name | Description |
+|----------|-------------|-------------|
+| TELEGRAM_API_ID | API_ID | Telegram API ID (required) |
+| TELEGRAM_API_HASH | API_HASH | Telegram API hash (required) |
+| TELEGRAM_SESSION_PATH | SESSION | Path to session file (required) |
+| REDIS_URL | REDIS_URI | Redis connection URL (required) |
+| OUTPUT_DIR_PATH | - | Path for output files (default: /data/output) |
+| LOG_LEVEL | - | Logging level (default: INFO) |
+| RQ_QUEUE_NAME | - | Redis queue name (default: default) |
+| LLM_API_KEY | - | LLM API key (optional) |
+| LLM_ENDPOINT_URL | - | LLM API endpoint (optional) |
+| LLM_MODEL_NAME | - | LLM model name (optional) |
+| MAX_LLM_HISTORY_TOKENS | - | Max tokens for LLM (default: 3000) |
 
-## Deploy to Heroku
-Get the [Necessary Variables](#Necessary-Variables) and then click the button below!  
+Copy `.env.sample` to `.env` and fill in the values.
 
-<summary>Deploy To Heroku</summary>
-<p>
-<br>
-<a href="https://heroku.com/deploy">
-  <img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy">
-</a>
-</p>
-## Deploy to Okteto
-Get the [Necessary Variables](#Necessary-Variables) and then click the button below!
+## Installation
 
-[![Develop on Okteto](https://okteto.com/develop-okteto.svg)](https://cloud.okteto.com/deploy?repository=https://github.com/TeamUltroid/Ultroid)
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-## Deploy Locally
-- [Traditional Method](#local-deploy---traditional-method)
-- [Easy Method](#local-deploy---easy-method)
-- [Ultroid CLI](#ultroid-cli)
+# First-time interactive authentication
+python run_userbot.py
 
-### Local Deploy - Easy Method
-- Linux - `wget -O locals.py https://git.io/JY9UM && python3 locals.py`
-- Windows - `cd desktop ; wget https://git.io/JY9UM -o locals.py ; python locals.py`
-- Termux - `wget -O install-termux https://tiny.ultroid.tech/termux && bash install-termux`
+# Start the worker
+python worker/run_worker.py
+```
 
-### Local Deploy - Traditional Method
-- Get your [Necessary Variables](#Necessary-Variables)
-- Clone the repository:    
-`git clone https://github.com/TeamUltroid/Ultroid.git`
-- Go to the cloned folder:    
-`cd Ultroid`
-- Create a virtual env:      
-`virtualenv -p /usr/bin/python3 venv`
-`. ./venv/bin/activate`
-- Install the requirements:      
-`pip(3) install -U -r re*/st*/optional-requirements.txt`
-`pip(3) install -U -r requirements.txt`
-- Generate your `SESSION`:
-  - For Linux users:
-    `bash sessiongen`
-     or
-    `wget -O session.py https://git.io/JY9JI && python3 session.py`
-  - For Termux users:
-    `wget -O session.py https://git.io/JY9JI && python session.py`
-  - For Windows Users:
-    `cd desktop ; wget https://git.io/JY9JI -o ultroid.py ; python ultroid.py`
-- Fill your details in a `.env` file, as given in [`.env.sample`](https://github.com/TeamUltroid/Ultroid/blob/main/.env.sample).
-(You can either edit and rename the file or make a new file named `.env`.)
-- Run the bot:
-  - Linux Users:
-   `bash startup`
-  - Windows Users:
-    `python(3) -m pyUltroid`
+## Usage
 
----
-## Necessary Variables
-- `SESSION` - SessionString for your accounts login session. Get it from [here](#Session-String)
+1. Send a message to yourself with a chat/group/channel name or forward a message from the target.
+2. Respond with your custom prompt when asked.
+3. Wait for the extraction and summarization to complete.
+4. Receive a summary and participant file (if applicable).
 
-One of the following database:
-- For **Redis** (tutorial [here](./resources/extras/redistut.md))
-  - `REDIS_URI` - Redis endpoint URL, from [redislabs](http://redislabs.com/).
-  - `REDIS_PASSWORD` - Redis endpoint Password, from [redislabs](http://redislabs.com/).
-- For **MONGODB**
-  - `MONGO_URI` - Get it from [mongodb](https://mongodb.com/atlas).
-- For **SQLDB**
-  - `DATABASE_URL`- Get it from [elephantsql](https://elephantsql.com).
+## Deployment
 
-## Session String
-Different ways to get your `SESSION`:
-* [![Run on Repl.it](https://replit.com/badge/github/TeamUltroid/Ultroid)](https://replit.com/@TeamUltroid/UltroidStringSession)
-* Linux : `wget -O session.py https://git.io/JY9JI && python3 session.py`
-* PowerShell : `cd desktop ; wget https://git.io/JY9JI ; python ultroid.py`
-* Termux : `wget -O session.py https://git.io/JY9JI && python session.py`
-* TelegramBot : [@SessionGeneratorBot](https://t.me/SessionGeneratorBot)
+This project includes a `render.yaml` for easy deployment on Render.com.
 
----
+## Security Warning
 
-# License
-[![License](https://www.gnu.org/graphics/agplv3-155x51.png)](LICENSE)   
-Ultroid is licensed under [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.en.html) v3 or later.
+The authentication in API endpoints is a placeholder only. Before production deployment, implement proper authentication using OAuth2, JWT, or a similar system.
 
----
+## License
 
-# Credits
-* [![TeamUltroid-Devs](https://img.shields.io/static/v1?label=Teamultroid&message=devs&color=critical)](https://t.me/UltroidDevs)
-* [Lonami](https://github.com/LonamiWebs/) for [Telethon.](https://github.com/LonamiWebs/Telethon)
-* [MarshalX](https://github.com/MarshalX) for [PyTgCalls.](https://github.com/MarshalX/tgcalls)
-
-> Made with 💕 by [@TeamUltroid](https://t.me/TeamUltroid).    
+See the LICENSE file for details.
