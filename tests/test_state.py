@@ -32,3 +32,17 @@ def test_update_request_status():
     state.update_request_status(rid, "bar")
     val = state.get_request_data(rid)
     assert val.get("status") == "bar"
+
+def test_set_and_get_status_message():
+    user_id = 1001
+    chat_id = 2002
+    msg_id = 3003
+    state.set_status_message(user_id, chat_id, msg_id)
+    assert state.get_status_message(user_id, chat_id) == msg_id
+
+def test_add_rq_job_id():
+    rid = "req-job"
+    state.store_request_data(rid, {"foo": "bar"})
+    state.add_rq_job_id(rid, "jobid-xyz")
+    data = state.get_request_data(rid)
+    assert data["rq_job_id"] == "jobid-xyz"

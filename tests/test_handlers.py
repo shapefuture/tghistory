@@ -34,3 +34,18 @@ async def test_handle_message_input_cancel(monkeypatch):
 
     await handlers.handle_message_input(event)
     event.respond.assert_awaited()
+
+@pytest.mark.asyncio
+async def test_handle_message_input_invalid(monkeypatch):
+    event = MagicMock()
+    event.sender_id = 123
+    event.raw_text = "a"
+    event.is_group = False
+    event.is_channel = False
+    event.fwd_from = None
+    event.is_private = True
+    event.chat_id = 555
+    state.get_pending_state = lambda uid: "rid123"
+    event.respond = AsyncMock()
+    await handlers.handle_message_input(event)
+    event.respond.assert_awaited()
