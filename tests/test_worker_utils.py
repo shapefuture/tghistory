@@ -11,5 +11,4 @@ def test_clean_message_text_whitespace():
     assert cleaned == "foo bar"
 
 def test_clean_message_text_no_error_on_invalid():
-    # Should not raise even on weird input
-    assert clean_message_text(None if False else "X") == "X"
+    assert clean_message_text("X") == "X"
