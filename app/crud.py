@@ -1,31 +1,61 @@
+import logging
 from typing import Optional
-from app.schemas import ProcessingRequestSchema, TaskStatusSchema
-
-# These would typically be DB accessors; here we'll adapt for Redis for MVP
-
 from app.shared.redis_client import get_redis_connection
 from app import config
+from app.schemas import ProcessingRequestSchema, TaskStatusSchema
+
+logger = logging.getLogger("crud")
 
 def get_processing_request(request_id: str) -> Optional[ProcessingRequestSchema]:
-    r = get_redis_connection(config.settings)
-    req = r.hgetall(f"request:{request_id}:data")
-    if not req:
+    logger.debug(f"get_processing_request called: request_id={request_id}")
+    try:
+        redis_conn = get_redis_connection(config.settings)
+        key = f"request:{request_id}:data"
+        data = redis_conn.hgetall(key)
+        if not data:
+            logger.warning(f"No processing request found in Redis: {key}")
+            return None
+        try:
+            # decode bytes
+            decoded = {k.decode(): v.decode() for k, v in data.items()}
+            logger.debug(f"Decoded processing request: {decoded}")
+        except Exception as decode_error:
+            logger.error(f"Failed to decode Redis result for {key}: {decode_error}", exc_info=True)
+            return None
+        try:
+            # Build schema and log validation
+            req = ProcessingRequestSchema(**decoded)
+            logger.info(f"ProcessingRequestSchema built for request_id={request_id}")
+            return req
+        except Exception as schema_error:
+            logger.error(f"Failed to create ProcessingRequestSchema: {schema_error}", exc_info=True)
+            return None
+    except Exception as e:
+        logger.error(f"get_processing_request error: {e}", exc_info=True)
         return None
-    user_id = req.get(b"user_id", b"").decode()
-    chat_id = req.get(b"target_chat_id", b"").decode()
-    status = req.get(b"status", b"").decode()
-    participants_file = req.get(b"participants_file", b"").decode() if req.get(b"participants_file") else None
-    summary = req.get(b"summary", b"").decode() if req.get(b"summary") else None
-    error = req.get(b"error", b"").decode() if req.get(b"error") else None
-    tasks = [
-        TaskStatusSchema(
-            chat_id=chat_id,
-            status=status,
-            detail=None,
-            progress=None,
-            participants_file=participants_file,
-            summary=summary,
-            error=error
-        )
-    ]
-    return ProcessingRequestSchema(request_id=request_id, user_id=user_id, tasks=tasks)
+
+def get_task_status(request_id: str) -> Optional[TaskStatusSchema]:
+    logger.debug(f"get_task_status called: request_id={request_id}")
+    try:
+        redis_conn = get_redis_connection(config.settings)
+        key = f"request:{request_id}:data"
+        data = redis_conn.hgetall(key)
+        if not data:
+            logger.warning(f"No task status found in Redis: {key}")
+            return None
+        try:
+            decoded = {k.decode(): v.decode() for k, v in data.items()}
+            logger.debug(f"Decoded task status: {decoded}")
+        except Exception as decode_error:
+            logger.error(f"Failed to decode Redis result for {key}: {decode_error}", exc_info=True)
+            return None
+        try:
+            status = TaskStatusSchema(**decoded)
+            logger.info(f"TaskStatusSchema built for request_id={request_id}")
+            return status
+        except Exception as schema_error:
+            logger.error(f"Failed to create TaskStatusSchema: {schema_error}", exc_info=True)
+            return None
+    except Exception as e:
+        logger.error(f"get_task_status error: {e}", exc_info=True)
+        return None
