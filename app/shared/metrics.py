@@ -10,13 +10,11 @@ from app import config
 
 logger = logging.getLogger("metrics")
 
-# Metric keys
 JOB_METRICS_KEY = "metrics:job:{job_id}"
 USER_METRICS_KEY = "metrics:user:{user_id}"
 SYSTEM_METRICS_KEY = "metrics:system:{date}"
 API_METRICS_KEY = "metrics:api:{endpoint}:{date}"
 
-# TTLs
 JOB_METRICS_TTL = 60 * 60 * 24 * 7
 USER_METRICS_TTL = 60 * 60 * 24 * 31
 SYSTEM_METRICS_TTL = 60 * 60 * 24 * 7
@@ -27,7 +25,7 @@ class MetricsCollector:
 
     @staticmethod
     def record_job_metrics(job_id: str, metrics: Dict[str, Any]) -> bool:
-        logger.debug(f"record_job_metrics called: job_id={job_id}, metrics_keys={list(metrics.keys())}")
+        logger.debug(f"[ENTRY] record_job_metrics: job_id={job_id}, metrics_keys={list(metrics.keys())}")
         try:
             redis_conn = get_redis_connection(config.settings)
             key = JOB_METRICS_KEY.format(job_id=job_id)
@@ -36,14 +34,15 @@ class MetricsCollector:
             redis_conn.hset(key, mapping={k: json.dumps(v) for k, v in metrics.items()})
             redis_conn.expire(key, JOB_METRICS_TTL)
             logger.info(f"Job metrics recorded: {job_id}")
+            logger.debug(f"[EXIT] record_job_metrics: True")
             return True
         except Exception as e:
-            logger.error(f"Failed to record job metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to record job metrics: {e}", exc_info=True)
             return False
 
     @staticmethod
     def record_user_metrics(user_id: int, action: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
-        logger.debug(f"record_user_metrics called: user_id={user_id}, action={action}, metadata={metadata}")
+        logger.debug(f"[ENTRY] record_user_metrics: user_id={user_id}, action={action}, metadata={metadata}")
         try:
             redis_conn = get_redis_connection(config.settings)
             key = USER_METRICS_KEY.format(user_id=user_id)
@@ -60,14 +59,15 @@ class MetricsCollector:
             redis_conn.expire(f"{key}:{today}", USER_METRICS_TTL)
             redis_conn.expire(f"{key}:counts", USER_METRICS_TTL)
             logger.info(f"User metrics recorded: user_id={user_id}, action={action}")
+            logger.debug(f"[EXIT] record_user_metrics: True")
             return True
         except Exception as e:
-            logger.error(f"Failed to record user metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to record user metrics: {e}", exc_info=True)
             return False
 
     @staticmethod
     def record_system_metrics() -> bool:
-        logger.debug("record_system_metrics called")
+        logger.debug("[ENTRY] record_system_metrics")
         try:
             import psutil
             redis_conn = get_redis_connection(config.settings)
@@ -92,14 +92,15 @@ class MetricsCollector:
             redis_conn.ltrim(key, 0, 1439)
             redis_conn.expire(key, SYSTEM_METRICS_TTL)
             logger.info("System metrics recorded")
+            logger.debug(f"[EXIT] record_system_metrics: True")
             return True
         except Exception as e:
-            logger.error(f"Failed to record system metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to record system metrics: {e}", exc_info=True)
             return False
 
     @staticmethod
     def record_api_metrics(endpoint: str, response_time: float, status_code: int) -> bool:
-        logger.debug(f"record_api_metrics called: endpoint={endpoint}, response_time={response_time}, status_code={status_code}")
+        logger.debug(f"[ENTRY] record_api_metrics: endpoint={endpoint}, response_time={response_time}, status_code={status_code}")
         try:
             redis_conn = get_redis_connection(config.settings)
             today = datetime.now().strftime("%Y-%m-%d")
@@ -118,15 +119,16 @@ class MetricsCollector:
             redis_conn.expire(key, API_METRICS_TTL)
             redis_conn.expire(f"{key}:response_times", API_METRICS_TTL)
             logger.info(f"API metrics recorded: endpoint={endpoint}, status_code={status_code}")
+            logger.debug(f"[EXIT] record_api_metrics: True")
             return True
         except Exception as e:
-            logger.error(f"Failed to record API metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to record API metrics: {e}", exc_info=True)
             return False
 
 class MetricsRetriever:
     @staticmethod
     def get_job_metrics(job_id: str) -> Dict[str, Any]:
-        logger.debug(f"get_job_metrics called: job_id={job_id}")
+        logger.debug(f"[ENTRY] get_job_metrics: job_id={job_id}")
         try:
             redis_conn = get_redis_connection(config.settings)
             key = JOB_METRICS_KEY.format(job_id=job_id)
@@ -136,14 +138,15 @@ class MetricsRetriever:
                 return {}
             result = {k.decode(): json.loads(v.decode()) for k, v in raw_metrics.items()}
             logger.info(f"Job metrics retrieved: job_id={job_id}, keys={list(result.keys())}")
+            logger.debug(f"[EXIT] get_job_metrics: Found {len(result)} metrics")
             return result
         except Exception as e:
-            logger.error(f"Failed to get job metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to get job metrics: {e}", exc_info=True)
             return {}
 
     @staticmethod
     def get_user_metrics(user_id: int, days: int = 7, actions: Optional[List[str]] = None) -> Dict[str, Any]:
-        logger.debug(f"get_user_metrics called: user_id={user_id}, days={days}, actions={actions}")
+        logger.debug(f"[ENTRY] get_user_metrics: user_id={user_id}, days={days}, actions={actions}")
         try:
             redis_conn = get_redis_connection(config.settings)
             key_prefix = USER_METRICS_KEY.format(user_id=user_id)
@@ -167,17 +170,18 @@ class MetricsRetriever:
                         if actions is None or any(json.loads(item.decode()).get("action") == action for action in actions)
                     ]
             logger.info(f"User metrics retrieved: user_id={user_id}")
+            logger.debug(f"[EXIT] get_user_metrics: counts={counts}, daily_activity_keys={list(daily_activity.keys())}")
             return {
                 "counts": counts,
                 "daily_activity": daily_activity
             }
         except Exception as e:
-            logger.error(f"Failed to get user metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to get user metrics: {e}", exc_info=True)
             return {}
 
     @staticmethod
     def get_system_metrics(days: int = 1, interval_minutes: int = 5) -> Dict[str, List[Dict[str, Any]]]:
-        logger.debug(f"get_system_metrics called: days={days}, interval_minutes={interval_minutes}")
+        logger.debug(f"[ENTRY] get_system_metrics: days={days}, interval_minutes={interval_minutes}")
         try:
             redis_conn = get_redis_connection(config.settings)
             end_date = datetime.now()
@@ -201,14 +205,15 @@ class MetricsRetriever:
                     else:
                         result[date] = sorted(all_metrics, key=lambda x: x["timestamp"])
             logger.info("System metrics retrieved")
+            logger.debug(f"[EXIT] get_system_metrics: {len(result)} day(s)")
             return result
         except Exception as e:
-            logger.error(f"Failed to get system metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to get system metrics: {e}", exc_info=True)
             return {}
 
     @staticmethod
     def get_api_metrics(days: int = 1, endpoints: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
-        logger.debug(f"get_api_metrics called: days={days}, endpoints={endpoints}")
+        logger.debug(f"[ENTRY] get_api_metrics: days={days}, endpoints={endpoints}")
         try:
             redis_conn = get_redis_connection(config.settings)
             end_date = datetime.now()
@@ -241,7 +246,8 @@ class MetricsRetriever:
                     result[endpoint] = {}
                 result[endpoint][date] = metrics
             logger.info("API metrics retrieved")
+            logger.debug(f"[EXIT] get_api_metrics: {len(result)} endpoint(s)")
             return result
         except Exception as e:
-            logger.error(f"Failed to get API metrics: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to get API metrics: {e}", exc_info=True)
             return {}
