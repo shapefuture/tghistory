@@ -1,3 +1,19 @@
-icon: https://raw.githubusercontent.com/TeamUltroid/Ultroid/main/resources/extras/logo_readme.jpg
+# Okteto pipeline for Telegram userbot + worker + Redis
+
 deploy:
-    - okteto deploy --build -f docker-compose.yml
+  - name: Deploy Redis
+    command: kubectl apply -f https://k8s.io/examples/application/guestbook/redis-deployment.yaml
+
+  - name: Build image
+    command: docker build -t okteto-userbot:latest .
+
+  - name: Deploy userbot
+    command: kubectl apply -f k8s/userbot-deployment.yaml
+
+  - name: Deploy worker
+    command: kubectl apply -f k8s/worker-deployment.yaml
+
+  - name: Set up data persistence
+    command: |
+      kubectl create ns data || true
+      kubectl apply -f k8s/pv.yaml

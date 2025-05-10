@@ -1,14 +1,55 @@
+version: '3.8'
 services:
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+
+  userbot:
+    build: .
+    command: python run_userbot.py
+    depends_on:
+      - redis
+    environment:
+      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
+      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
+      TELEGRAM_SESSION_PATH: "/data/session.session"
+      REDIS_URL: "redis://redis:6379"
+      OUTPUT_DIR_PATH: "/data/output"
+      LOG_LEVEL: "INFO"
+      RQ_QUEUE_NAME: "default"
+      LLM_API_KEY: "${LLM_API_KEY}"
+      LLM_ENDPOINT_URL: "${LLM_ENDPOINT_URL}"
+      LLM_MODEL_NAME: "${LLM_MODEL_NAME}"
+      MAX_LLM_HISTORY_TOKENS: "3000"
+    volumes:
+      - ./data:/data
+    restart: always
+
   worker:
     build: .
+    command: python worker/run_worker.py
+    depends_on:
+      - redis
     environment:
-      REDIS_URI: $REDIS_URI
-      REDIS_PASSWORD: $REDIS_PASSWORD
-      SESSION: $SESSION
-      API_ID: $API_ID  # defaults to None
-      API_HASH: $API_HASH  # defaults to None
-      MONGO_URI: $MONGO_URI  # defaults to None
-      BOT_TOKEN: $BOT_TOKEN # Not mandatory
-      LOG_CHANNEL: $LOG_CHANNEL # Not mandatory
-      DATABASE_URL: $DATABASE_URL  # defaults to None
-      OKTETO_TOKEN: $OKTETO_TOKEN
+      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
+      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
+      TELEGRAM_SESSION_PATH: "/data/session.session"
+      REDIS_URL: "redis://redis:6379"
+      OUTPUT_DIR_PATH: "/data/output"
+      LOG_LEVEL: "INFO"
+      RQ_QUEUE_NAME: "default"
+      LLM_API_KEY: "${LLM_API_KEY}"
+      LLM_ENDPOINT_URL: "${LLM_ENDPOINT_URL}"
+      LLM_MODEL_NAME: "${LLM_MODEL_NAME}"
+      MAX_LLM_HISTORY_TOKENS: "3000"
+    volumes:
+      - ./data:/data
+    restart: always
+
+volumes:
+  redis-data:

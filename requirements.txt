@@ -1,11 +1,34 @@
-# Important Requirements here.
+# Core Requirements
+python-dotenv
+pydantic[dotenv]
 telethon
 https://github.com/New-dev0/Telethon-Patch/archive/main.zip
 python-decouple
-python-dotenv
+rq
+redis
+httpx
+structlog
+fastapi
+uvicorn
+jinja2
+psutil
+
+# Original dependencies (retained for compatibility)
 telegraph
 enhancer
 requests
 aiohttp
 catbox-uploader
 cloudscraper
+
+# Optional: for LLM token counting
+tiktoken
+
+# Testing/Linting/Formatting
+pytest
+pytest-asyncio
+pytest-mock
+fakeredis[lua]
+black
+flake8
+mypy

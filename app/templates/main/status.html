@@ -1,0 +1,58 @@
+{% set status_map = {
+    "PENDING_PROMPT": "✏️ Awaiting prompt",
+    "QUEUED": "⏳ Queued",
+    "STARTED": "🔄 Started",
+    "EXTRACTING_HISTORY": "📃 Extracting history",
+    "PROGRESS": "📊 In progress",
+    "EXTRACTING_PARTICIPANTS": "👥 Extracting participants",
+    "WAITING": "⏱️ Waiting (rate limit)",
+    "CALLING_LLM": "🧠 Calling LLM",
+    "SUCCESS": "✅ Success",
+    "FAILED": "❌ Failed"
+} %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Summarization Status</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="20">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em;}
+        .status { font-size: 1.5em; }
+        .error { color: red; }
+        .file-link { margin-top: 1em; display: block; }
+    </style>
+</head>
+<body>
+    <h2>Chat Summarization Request Status</h2>
+    {% if req %}
+        <p><b>Request ID:</b> {{ req.request_id or "unknown" }}</p>
+        <p><b>Chat ID:</b> {{ req.target_chat_id or "unknown" }}</p>
+        <p><b>Status:</b>
+            <span class="status">
+                {{ status_map.get(req.status, req.status or "unknown") }}
+            </span>
+        </p>
+        {% if req.status == "SUCCESS" and req.custom_prompt %}
+            <h4>Prompt:</h4>
+            <pre>{{ req.custom_prompt }}</pre>
+        {% endif %}
+        {% if req.status == "SUCCESS" and req.tasks and req.tasks[0].summary %}
+            <h4>Summary:</h4>
+            <pre>{{ req.tasks[0].summary }}</pre>
+        {% endif %}
+        {% if req.tasks and req.tasks[0].participants_file %}
+            <a class="file-link" href="/download/{{ req.request_id }}/{{ req.tasks[0].participants_file.split('/')[-1] }}">Download participants file</a>
+        {% endif %}
+        {% if req.tasks and req.tasks[0].error %}
+            <div class="error">
+                <b>Error:</b> {{ req.tasks[0].error }}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="error">Request not found.</div>
+    {% endif %}
+</body>
+</html>

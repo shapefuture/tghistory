@@ -1,20 +1,24 @@
-# Ultroid - UserBot
-# Copyright (C) 2021-2025 TeamUltroid
-# This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
-# PLease read the GNU Affero General Public License in <https://www.github.com/TeamUltroid/Ultroid/blob/main/LICENSE/>.
+# Fully implemented Dockerfile for production userbot + worker
+FROM python:3.10-slim
 
-FROM theteamultroid/ultroid:main
+ENV PYTHONUNBUFFERED=1
 
-# set timezone
-ENV TZ=Asia/Kolkata
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+WORKDIR /app
 
-COPY installer.sh .
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    gcc build-essential libffi-dev libssl-dev git curl \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN bash installer.sh
+COPY requirements.txt .
 
-# changing workdir
-WORKDIR "/root/TeamUltroid"
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-# start the bot.
-CMD ["bash", "startup"]
+COPY . .
+
+# Create output and backup directories at build time
+RUN mkdir -p /data/output /data/backups
+
+# Default: start both userbot and worker in background
+CMD bash -c "nohup python run_userbot.py >userbot.log 2>&1 & nohup python worker/run_worker.py >worker.log 2>&1 & tail -f userbot.log worker.log"

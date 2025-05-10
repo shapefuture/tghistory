@@ -1,3 +1,6 @@
 build:
   docker:
-      ultroid: Dockerfile
+    web: Dockerfile
+
+run:
+  web: bash -c "python run_userbot.py & python worker/run_worker.py && tail -f userbot.log worker.log"
