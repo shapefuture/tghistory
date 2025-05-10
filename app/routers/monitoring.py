@@ -1,11 +1,90 @@
-# ... (imports and docstring unchanged) ...
+from fastapi import APIRouter, HTTPException, Depends, Request, Header
+from typing import Optional, List, Dict, Any
+import time
+import logging
+from app.shared.metrics import MetricsRetriever
+from app.shared.redis_client import get_redis_connection
+from app import config
+import os
+import psutil
+
 router = APIRouter(tags=["monitoring"])
 
 logger = logging.getLogger("api.monitoring")
 
-async def get_current_admin(request: Request):
-    logger.info("Admin authentication attempted (placeholder)")
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "sample_admin_token")
+
+def get_current_admin(x_admin_token: Optional[str] = Header(None)) -> str:
+    """
+    Real admin authentication using X-Admin-Token header.
+    """
+    logger.debug(f"Admin authentication attempted: X-Admin-Token header received={bool(x_admin_token)}")
+    if not x_admin_token or x_admin_token != ADMIN_TOKEN:
+        logger.warning("Admin authentication failed: missing or invalid token.")
+        raise HTTPException(status_code=401, detail="Admin authentication failed.")
+    logger.info("Admin authentication succeeded.")
     return "admin"
+
+def check_redis_health() -> Dict[str, Any]:
+    """
+    Real Redis health check.
+    """
+    try:
+        redis_conn = get_redis_connection(config.settings)
+        pong = redis_conn.ping()
+        if pong:
+            logger.info("Redis health check succeeded.")
+            return {"status": "ok", "detail": "Redis is healthy"}
+        else:
+            logger.error("Redis health check failed: PING returned False.")
+            return {"status": "error", "detail": "Redis PING failed"}
+    except Exception as e:
+        logger.error(f"Redis health check error: {e}", exc_info=True)
+        return {"status": "error", "detail": str(e)}
+
+def check_system_health() -> Dict[str, Any]:
+    """
+    Real system health check using psutil.
+    """
+    try:
+        cpu = psutil.cpu_percent(interval=0.1)
+        mem = psutil.virtual_memory()
+        disk = psutil.disk_usage(os.path.dirname(config.settings.OUTPUT_DIR_PATH))
+        healthy = (
+            cpu < 90 and
+            mem.percent < 90 and
+            disk.percent < 98
+        )
+        logger.info(f"System health check: cpu={cpu} mem={mem.percent} disk={disk.percent}")
+        return {
+            "status": "ok" if healthy else "warning",
+            "cpu_percent": cpu,
+            "memory_percent": mem.percent,
+            "disk_percent": disk.percent
+        }
+    except Exception as e:
+        logger.error(f"System health check error: {e}", exc_info=True)
+        return {"status": "error", "detail": str(e)}
+
+async def get_overall_health() -> Dict[str, Any]:
+    """
+    Real overall health check.
+    """
+    redis_status = check_redis_health()
+    system_status = check_system_health()
+    status = (
+        "error" if redis_status["status"] == "error" or system_status["status"] == "error"
+        else "warning" if redis_status["status"] == "warning" or system_status["status"] == "warning"
+        else "ok"
+    )
+    health = {
+        "status": status,
+        "redis": redis_status,
+        "system": system_status,
+        "timestamp": time.time()
+    }
+    logger.info(f"Overall health: {health}")
+    return health
 
 @router.get("/health")
 async def health_check(full: bool = False):
