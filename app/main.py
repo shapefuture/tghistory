@@ -1,7 +1,27 @@
-# ... (imports unchanged) ...
+import time
+import logging
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
+from typing import Callable
+
+from app.shared.metrics import MetricsCollector
+from app.routers import monitoring, processing
+
 logger = logging.getLogger("api")
 
-# ... (logging/cors/templates setup unchanged) ...
+app = FastAPI()
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+templates = Jinja2Templates(directory="app/templates")
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next: Callable):
@@ -21,7 +41,8 @@ async def add_process_time_header(request: Request, call_next: Callable):
         logger.error(f"API middleware error: {e}", exc_info=True)
         raise
 
-# ... (router includes unchanged) ...
+app.include_router(monitoring.router)
+app.include_router(processing.router)
 
 @app.get("/")
 async def root():
@@ -36,5 +57,3 @@ async def root():
     except Exception as e:
         logger.error(f"Root endpoint error: {e}", exc_info=True)
         return {"status": "error", "error": str(e)}
-
-# ... (uvicorn-run block unchanged) ...

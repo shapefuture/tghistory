@@ -1,4 +1,16 @@
-# ... (imports and docstring unchanged) ...
+import os
+import glob
+import tarfile
+import gzip
+import json
+import time
+import logging
+from typing import Optional, Tuple, List, Dict, Any
+from datetime import datetime
+
+from app.shared.redis_client import get_redis_connection
+from app import config
+
 logger = logging.getLogger("backup")
 
 class BackupManager:
@@ -18,8 +30,6 @@ class BackupManager:
             backup_path = os.path.join(backup_dir, backup_filename)
             with tarfile.open(backup_path, "w:gz") as tar:
                 tar.add(session_path, arcname=os.path.basename(session_path))
-                session_dir = os.path.dirname(session_path)
-                session_name = os.path.basename(session_path)
                 for related_file in glob.glob(f"{session_path}*"):
                     if related_file != session_path:
                         tar.add(related_file, arcname=os.path.basename(related_file))

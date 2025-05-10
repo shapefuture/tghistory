@@ -1,7 +1,14 @@
-# ... (imports and docstring unchanged) ...
+import time
+import logging
+from typing import Tuple, Dict, Any
+
+from app.shared.redis_client import get_redis_connection
+from app import config
+
 logger = logging.getLogger("rate_limiter")
 
-# ... (constants unchanged) ...
+USER_RATE_LIMIT_KEY = "rate:user:{user_id}:{action}"
+GLOBAL_RATE_LIMIT_KEY = "rate:global:{action}"
 
 class RateLimiter:
     @staticmethod

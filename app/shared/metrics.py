@@ -1,7 +1,26 @@
-# ... (imports and docstring unchanged) ...
+import logging
+import json
+import os
+import time
+from typing import Optional, Dict, Any, List
+from datetime import datetime, timedelta
+
+from app.shared.redis_client import get_redis_connection
+from app import config
+
 logger = logging.getLogger("metrics")
 
-# ... (constants unchanged) ...
+# Metric keys
+JOB_METRICS_KEY = "metrics:job:{job_id}"
+USER_METRICS_KEY = "metrics:user:{user_id}"
+SYSTEM_METRICS_KEY = "metrics:system:{date}"
+API_METRICS_KEY = "metrics:api:{endpoint}:{date}"
+
+# TTLs
+JOB_METRICS_TTL = 60 * 60 * 24 * 7
+USER_METRICS_TTL = 60 * 60 * 24 * 31
+SYSTEM_METRICS_TTL = 60 * 60 * 24 * 7
+API_METRICS_TTL = 60 * 60 * 24 * 31
 
 class MetricsCollector:
     """Collects and stores metrics about system usage and performance"""

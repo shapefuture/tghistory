@@ -9,7 +9,23 @@ import traceback
 logger = logging.getLogger("config")
 
 class Settings(BaseSettings):
-    # ... (fields unchanged for brevity) ...
+    TELEGRAM_API_ID: Optional[int] = None
+    TELEGRAM_API_HASH: Optional[str] = None
+    TELEGRAM_SESSION_PATH: Optional[str] = None
+    REDIS_URL: Optional[str] = None
+    OUTPUT_DIR_PATH: Optional[str] = None
+    LOG_LEVEL: str = "INFO"
+    RQ_QUEUE_NAME: str = "default"
+    LLM_API_KEY: Optional[str] = None
+    LLM_ENDPOINT_URL: Optional[str] = None
+    LLM_MODEL_NAME: Optional[str] = None
+    MAX_LLM_HISTORY_TOKENS: int = 3000
+
+    # Legacy/alternate env names for compatibility
+    API_ID: Optional[int] = None
+    API_HASH: Optional[str] = None
+    SESSION: Optional[str] = None
+    REDIS_URI: Optional[str] = None
 
     def __init__(self, **data):
         logger.debug("Initializing Settings with environment data (sensitive values hidden)")
@@ -29,7 +45,6 @@ class Settings(BaseSettings):
             logger.error(f"Settings init error: {e}\n{traceback.format_exc()}")
             raise
 
-    # Validators: all with try/except, log before raise
     @validator("TELEGRAM_API_ID", pre=True)
     def validate_telegram_id(cls, v):
         try:
@@ -100,7 +115,6 @@ class Settings(BaseSettings):
 try:
     logger.debug("Loading application settings from .env")
     settings = Settings(_env_file=os.getenv("ENV_FILE", ".env"))
-    # Validate required fields after fallbacks applied
     missing = []
     if settings.TELEGRAM_API_ID is None:
         missing.append("TELEGRAM_API_ID or API_ID")
