@@ -1,16 +1,22 @@
-#!/usr/bin/env bash
-# Ultroid - UserBot
-# Copyright (C) 2021-2025 TeamUltroid
-#
-# This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
-# PLease read the GNU Affero General Public License in <https://www.github.com/TeamUltroid/Ultroid/blob/main/LICENSE/>.
+#!/data/data/com.termux/files/usr/bin/bash
+set -e
 
-if [ -d "resources" ]
-then
-    echo "Current directory Identified.."
-else
-    apt install git -y
-    git clone https://github.com/TeamUltroid/Ultroid
-    cd Ultroid
+LOGFILE="termux-install.log"
+echo "[*] Starting Termux Python TelegramBot install at $(date)" | tee "$LOGFILE"
+
+pkg install -y python git clang make openssl-tool libffi-dev >>"$LOGFILE" 2>&1
+
+pip install --upgrade pip >>"$LOGFILE" 2>&1
+pip install virtualenv >>"$LOGFILE" 2>&1
+
+python -m virtualenv venv >>"$LOGFILE" 2>&1
+source venv/bin/activate
+
+pip install -r requirements.txt >>"$LOGFILE" 2>&1
+
+if [ -f .env.sample ] && [ ! -f .env ]; then
+    cp .env.sample .env
+    echo "[*] .env file created from sample" | tee -a "$LOGFILE"
 fi
-bash resources/startup/termux.sh
+
+echo "[*] Termux installation complete." | tee -a "$LOGFILE"

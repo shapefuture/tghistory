@@ -1,19 +1,30 @@
-#!/usr/bin/env bash
-# Ultroid - UserBot
-# Copyright (C) 2021-2025 TeamUltroid
-#
-# This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
-# PLease read the GNU Affero General Public License in <https://www.github.com/TeamUltroid/Ultroid/blob/main/LICENSE/>.
+#!/bin/bash
+set -e
 
+LOGFILE="startup.log"
+echo "[*] Starting application at $(date)" | tee "$LOGFILE"
 
-echo "
-            ┏┳┓╋┏┓╋╋╋╋┏┓┏┓
-            ┃┃┣┓┃┗┳┳┳━╋╋┛┃
-            ┃┃┃┗┫┏┫┏┫╋┃┃╋┃
-            ┗━┻━┻━┻┛┗━┻┻━┛
+if [ ! -d venv ]; then
+    echo "[*] No virtual environment found, running installer..." | tee -a "$LOGFILE"
+    bash installer.sh
+fi
 
-      Visit @TheUltroid for updates!!
+echo "[*] Activating virtual environment..." | tee -a "$LOGFILE"
+source venv/bin/activate
 
-"
-if [ -f .env ] ; then  set -o allexport; source .env; set +o allexport ; fi
-if [ $SESSION1 ] ; then wget https://gist.github.com/1Danish-00/6554f034549197e5824972b01f631e0c/raw/main.py && python3 main.py ; else python3 -m pyUltroid ; fi
+echo "[*] Running database migrations (if any)..." | tee -a "$LOGFILE"
+if [ -f manage.py ]; then
+    python manage.py migrate >>"$LOGFILE" 2>&1
+fi
+
+echo "[*] Starting userbot..." | tee -a "$LOGFILE"
+nohup python run_userbot.py >> userbot.log 2>&1 &
+UB_PID=$!
+echo "[*] Userbot started with PID $UB_PID" | tee -a "$LOGFILE"
+
+echo "[*] Starting worker..." | tee -a "$LOGFILE"
+nohup python worker/run_worker.py >> worker.log 2>&1 &
+W_PID=$!
+echo "[*] Worker started with PID $W_PID" | tee -a "$LOGFILE"
+
+echo "[*] Startup complete. Userbot PID: $UB_PID, Worker PID: $W_PID" | tee -a "$LOGFILE"
